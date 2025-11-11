@@ -1,0 +1,198 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                     GET_NEXT_LINE ALGORITHM EXPLANATION                    */
+/*                                                                            */
+/* ************************************************************************** */
+
+/*
+** VISUAL FLOWCHART OF GET_NEXT_LINE ALGORITHM:
+**
+**                    [FUNCTION CALLED]
+**                           |
+**                           v
+**                  [Check fd and BUFFER_SIZE]
+**                           |
+**                      Valid? -----> NO -----> [Return NULL]
+**                           |
+**                          YES
+**                           |
+**                           v
+**              [Call read_and_save(fd, saved)]
+**                           |
+**                           v
+**         ┌─────────────────────────────────────────┐
+**         │          READ_AND_SAVE LOOP             │
+**         │                                         │
+**         │  ┌─> [Read BUFFER_SIZE bytes]           │
+**         │  │            |                         │
+**         │  │            v                         │
+**         │  │   [Join with existing saved data]    │
+**         │  │            |                         │
+**         │  │            v                         │
+**         │  │   [Check if '\n' found in data]      │
+**         │  │            |                         │
+**         │  │     Found? ─────> YES ──┐            │
+**         │  │            |             │           │
+**         │  │           NO             │           │
+**         │  │            |             │           │
+**         │  │   [More data to read?]   │           │
+**         │  │            |             │           │
+**         │  │     YES ───┘             │           │
+**         │  │            |             │           │
+**         │  │           NO             │           │
+**         │  │            |             │           │
+**         │  │            v             v           │
+**         │  └──────── [Continue] ──> [Exit Loop]   │
+**         └─────────────────────────────────────────┘
+**                           |
+**                           v
+**                [Call extract_line(saved)]
+**                           |
+**                           v
+**         ┌─────────────────────────────────────────┐
+**         │            EXTRACT_LINE                 │
+**         │                                         │
+**         │  [Find first '\n' or end of string]     │
+**         │                |                        │
+**         │                v                        │
+**         │  [Allocate memory for line + '\n']      │
+**         │                |                        │
+**         │                v                        │
+**         │  [Copy characters up to and including   │
+**         │   '\n' if present]                      │
+**         │                |                        │
+**         │                v                        │
+**         │  [Return new line string]               │
+**         └─────────────────────────────────────────┘
+**                           |
+**                           v
+**                [Call update_saved(saved)]
+**                           |
+**                           v
+**         ┌─────────────────────────────────────────┐
+**         │           UPDATE_SAVED                  │
+**         │                                         │
+**         │  [Find position after '\n']             │
+**         │                |                        │
+**         │                v                        │
+**         │  [Any data after '\n'?]                 │
+**         │                |                        │
+**         │         YES ───┴─── NO                  │
+**         │          |           |                  │
+**         │          v           v                  │
+**         │  [Create substring]  [Free saved,       │
+**         │  [with remaining]    return NULL]       │
+**         │  [data]              |                  │
+**         │          |           |                  │
+**         │          v           |                  │
+**         │  [Free old saved]    |                  │
+**         │          |           |                  │
+**         │          v           v                  │
+**         │  [Return new saved] ─┘                  │
+**         └─────────────────────────────────────────┘
+**                           |
+**                           v
+**                    [Return line to caller]
+**
+**
+** STATIC VARIABLE PERSISTENCE EXAMPLE:
+**
+** File content: "Hello\nWorld\nEnd"
+** BUFFER_SIZE: 6
+**
+** CALL 1:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved (static) = NULL                                       │
+** │ read_and_save reads: "Hello\n"                              │
+** │ saved becomes: "Hello\n"                                    │
+** │ extract_line extracts: "Hello\n"                            │
+** │ update_saved: no data after '\n', so saved becomes NULL     │
+** │ Returns: "Hello\n"                                          │
+** └─────────────────────────────────────────────────────────────┘
+**
+** CALL 2:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved (static) = NULL (from previous call)                  │
+** │ read_and_save reads: "World\n"                              │
+** │ saved becomes: "World\n"                                    │
+** │ extract_line extracts: "World\n"                            │
+** │ update_saved: no data after '\n', so saved becomes NULL     │
+** │ Returns: "World\n"                                          │
+** └─────────────────────────────────────────────────────────────┘
+**
+** CALL 3:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved (static) = NULL (from previous call)                  │
+** │ read_and_save reads: "End" (no '\n' at EOF)                 │
+** │ saved becomes: "End"                                        │
+** │ extract_line extracts: "End"                                │
+** │ update_saved: no '\n' found, so saved becomes NULL          │
+** │ Returns: "End"                                              │
+** └─────────────────────────────────────────────────────────────┘
+**
+** CALL 4:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved (static) = NULL (from previous call)                  │
+** │ read_and_save: read() returns 0 (EOF)                       │
+** │ Returns: NULL (end of file)                                 │
+** └─────────────────────────────────────────────────────────────┘
+**
+**
+** COMPLEX EXAMPLE WITH SMALL BUFFER:
+**
+** File content: "Line1\nLine2\nLine3"
+** BUFFER_SIZE: 3
+**
+** CALL 1:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved = NULL                                                │
+** │ Read 1: "Lin" -> saved = "Lin" (no '\n' found)              │
+** │ Read 2: "e1\n" -> saved = "Line1\n" ('\n' found, stop)      │
+** │ extract_line: "Line1\n"                                     │
+** │ update_saved: saved = "" (empty after '\n')                 │
+** │ Returns: "Line1\n"                                          │
+** └─────────────────────────────────────────────────────────────┘
+**
+** CALL 2:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved = "" (from previous call)                             │
+** │ Read 1: "Lin" -> saved = "Lin" (no '\n' found)              │
+** │ Read 2: "e2\n" -> saved = "Line2\n" ('\n' found, stop)      │
+** │ extract_line: "Line2\n"                                     │
+** │ update_saved: saved = "" (empty after '\n')                 │
+** │ Returns: "Line2\n"                                          │
+** └─────────────────────────────────────────────────────────────┘
+**
+** CALL 3:
+** ┌─────────────────────────────────────────────────────────────┐
+** │ saved = "" (from previous call)                             │
+** │ Read 1: "Lin" -> saved = "Lin" (no '\n' found)              │
+** │ Read 2: "e3" -> saved = "Line3" (EOF reached, stop)         │
+** │ extract_line: "Line3"                                       │
+** │ update_saved: saved = NULL (no '\n' found)                  │
+** │ Returns: "Line3"                                            │
+** └─────────────────────────────────────────────────────────────┘
+**
+**
+** WHY STATIC VARIABLES ARE CRUCIAL:
+**
+** Without static variables, each function call would start fresh:
+** - We'd lose track of partially read lines
+** - We'd have to re-read the entire file each time
+** - We couldn't maintain state between calls
+**
+** With static variables:
+** - Data persists between function calls
+** - We can continue from where we left off
+** - Efficient memory usage
+** - True line-by-line reading capability
+**
+**
+** MEMORY MANAGEMENT STRATEGY:
+**
+** 1. Always free old 'saved' before assigning new value
+** 2. Caller must free the returned line
+** 3. Temporary buffers are freed within functions
+** 4. Static 'saved' is automatically freed when program ends
+**
+*/
