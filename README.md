@@ -1,6 +1,18 @@
 # get_next_line (short)
 
-Minimal, Norminette-friendly implementation of the 42 project get_next_line.
+Get Next Line is a small C implementation of get_next_line to read lines from a file descriptor. It is designed for simple file I/O tasks and learning C buffer-handling and line parsing.
+
+## Features
+- Read a line from a file descriptor
+- Minimal dependencies — plain C
+- Example usage and simple tests included
+
+## Quick start
+```sh
+# build (example)
+gcc -Wall -Wextra -Werror -o gnl get_next_line.c main.c
+./gnl example.txt
+```
 
 ## Build
 make fclean all
@@ -38,5 +50,8 @@ Use your usual francinette/getcheck setup:
 getcheck francinette --strict
 ```
 
+## License
+This project is available under the MIT License. See LICENSE for details.
+
 License: educational / adapt freely.
-![Uploading Get Next Line flow chart.png…]()
+
