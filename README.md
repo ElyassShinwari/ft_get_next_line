@@ -28,7 +28,8 @@ Returns a malloc'd string (includes `\n` if present). Caller must free.
 
 ## Notes
 - Uses a static `leftover` buffer to keep unread data between calls.
-- Avoid repeated concatenation of a growing string inside the read loop — that causes O(n^2) behavior and timeouts on very large single-line files with small BUFFER_SIZE.
+- Avoid repeated concatenation of a growing string inside the read loop — that caus<img width="1476" height="4959" alt="Get Next Line flow chart" src="https://github.com/user-attachments/assets/555a980e-bae6-404e-bfac-0008153bc8fd" />
+es O(n^2) behavior and timeouts on very large single-line files with small BUFFER_SIZE.
 - For large single-line files prefer an approach that minimizes realloc/copy (chunked buffers, doubling growth, or assemble final line once).
 
 ## Testing
@@ -38,3 +39,4 @@ getcheck francinette --strict
 ```
 
 License: educational / adapt freely.
+![Uploading Get Next Line flow chart.png…]()
